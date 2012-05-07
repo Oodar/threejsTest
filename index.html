@@ -4,10 +4,43 @@
 	<title>Three.js fun!</title>
 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" charset="utf-8"></script>
 	<script type="text/javascript" src="Three.js" charset="utf-8"></script>
+	<script type="text/javascript" src="/socket.io/socket.io.js" charset="utf-8"></script>
+	<script type="text/javascript" charset="utf-8">
+		var socket = io.connect('http://localhost');
+		socket.on('user connected', function() {
+				console.log('user connected');
+		});
+		socket.on('spawn cube', function() {
+				spawnCube();
+		});
+	</script>
 	<script type="text/javascript" charset="utf-8">
 		var camera, scene, renderer;
+		var clock;
+		var controller;
+		var mouseDown = false;
+		var downPos;
+		var cubes;
+
+		function spawnCube() {
+
+			var geo = new THREE.CubeGeometry( 10, 10, 10 );
+			var mat = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/crate.gif') });
+			var mesh = new THREE.Mesh( geo, mat );
+
+			mesh.position.x = parseInt(Math.random() * 50);
+			mesh.position.y = 5;
+			mesh.position.z = parseInt(Math.random() * 50);
+			console.log("spawning cube at: " + mesh.position.x + ", " + mesh.position.z );
+
+			scene.add(mesh);
+		}
 
 		$(document).ready(function() {
+
+				//window.addEventListener('mousedown', onMouseDown);
+				//window.addEventListener('mouseup', onMouseUp);
+				//window.addEventListener('mousemove', onMouseMove)
 
 				var floor, floorMaterial, mesh
 
@@ -15,17 +48,28 @@
 				animate();
 
 				function init() {
+
 					console.log("init called");
 
+					clock = new THREE.Clock();
 					scene = new THREE.Scene();
+					scene.fog = new THREE.FogExp2( 0x000000, 0.0035 );
 
-					camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000);
-					camera.position.y = 800;
-					camera.position.z = 800;
+					camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 10000);
+					camera.position.set( 0, 25, 0 );
 
-					camera.lookAt( new THREE.Vector3(0,0,0) );
+					controller = new THREE.FirstPersonControls( camera );
+
+					controller.movementSpeed = 70;
+					controller.lookSpeed = 0.2;
+					controller.noFly = true;
+					controller.lookVertical = false;
 
 					scene.add(camera);
+
+					light = new THREE.DirectionalLight( 0xffffff );
+					light.position.set( 0, 0.5, 1 ).normalize();
+					scene.add(light);
 
 
 					var x = document.createElement( "canvas" );
@@ -37,24 +81,25 @@
 					xc.fillRect(0,0,64,64);
 					xc.fillRect(64,64,64,64);
 
-					floorMaterial = new THREE.MeshBasicMaterial({ map: new THREE.Texture( x, new THREE.UVMapping(), THREE.RepeatWrapping, THREE.RepeatWrapping ) });
-					floorMaterial.map.needsUpdate = true;
-					floorMaterial.map.repeat.set(10,10);
+					material = new THREE.MeshLambertMaterial({ color: 0xffaa00, wireframe: true });
+					material.color.setHSV( 0.1, 0.2, 0.5 );
 
-					geometry = new THREE.PlaneGeometry( 1000, 1000, 15, 10 );
-					floor = new THREE.Mesh( geometry, floorMaterial );
+					plane = new THREE.PlaneGeometry( 1000, 1000, 100, 100 );
+					floor = new THREE.Mesh( plane, material );
+					floor.position.y = 0.1
+					
 
 					scene.add(floor);
 
-					geometry = new THREE.CubeGeometry( 200, 200, 200 );
+					geometry = new THREE.CubeGeometry( 10, 10, 10 );
 					material = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/crate.gif') });
 					mesh = new THREE.Mesh( geometry, material );
 
-					mesh.position.y += 100;
+					mesh.position.y += 5;
 
 					scene.add(mesh);
 
-					renderer = new THREE.WebGLRenderer();
+					renderer = new THREE.WebGLRenderer({ clearColor: 0x000000, clearAlpha: 1, antialias: true });
 					renderer.setSize( window.innerWidth, window.innerHeight );
 
 					$('#container')[0].appendChild( renderer.domElement );
@@ -64,15 +109,16 @@
 				function animate() {
 					requestAnimationFrame( animate );
 
-					camera.position.x = Math.sin(Date.now()/1000) * 400;
-					camera.position.z = Math.cos(Date.now()/1000) * 400;
-					camera.lookAt( new THREE.Vector3(0,0,0) );
+					var delta = clock.getDelta();
 
+					controller.update( delta );
 					renderer.render( scene, camera );
 				}
 		});
 	</script>
 </head>
 <body id="container">
+	<div id="stats">
+	</div>
 </body>
 </html>
