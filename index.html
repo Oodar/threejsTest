@@ -1,0 +1,78 @@
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+	<title>Three.js fun!</title>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" charset="utf-8"></script>
+	<script type="text/javascript" src="Three.js" charset="utf-8"></script>
+	<script type="text/javascript" charset="utf-8">
+		var camera, scene, renderer;
+
+		$(document).ready(function() {
+
+				var floor, floorMaterial, mesh
+
+				init();
+				animate();
+
+				function init() {
+					console.log("init called");
+
+					scene = new THREE.Scene();
+
+					camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000);
+					camera.position.y = 800;
+					camera.position.z = 800;
+
+					camera.lookAt( new THREE.Vector3(0,0,0) );
+
+					scene.add(camera);
+
+
+					var x = document.createElement( "canvas" );
+					var xc = x.getContext("2d");
+					x.width = x.height = 128;
+					xc.fillStyle = "#FFF";
+					xc.fillRect(0,0,128,128);
+					xc.fillStyle = "#000";
+					xc.fillRect(0,0,64,64);
+					xc.fillRect(64,64,64,64);
+
+					floorMaterial = new THREE.MeshBasicMaterial({ map: new THREE.Texture( x, new THREE.UVMapping(), THREE.RepeatWrapping, THREE.RepeatWrapping ) });
+					floorMaterial.map.needsUpdate = true;
+					floorMaterial.map.repeat.set(10,10);
+
+					geometry = new THREE.PlaneGeometry( 1000, 1000, 15, 10 );
+					floor = new THREE.Mesh( geometry, floorMaterial );
+
+					scene.add(floor);
+
+					geometry = new THREE.CubeGeometry( 200, 200, 200 );
+					material = new THREE.MeshBasicMaterial({ map: THREE.ImageUtils.loadTexture('img/crate.gif') });
+					mesh = new THREE.Mesh( geometry, material );
+
+					mesh.position.y += 100;
+
+					scene.add(mesh);
+
+					renderer = new THREE.WebGLRenderer();
+					renderer.setSize( window.innerWidth, window.innerHeight );
+
+					$('#container')[0].appendChild( renderer.domElement );
+				
+				}
+
+				function animate() {
+					requestAnimationFrame( animate );
+
+					camera.position.x = Math.sin(Date.now()/1000) * 400;
+					camera.position.z = Math.cos(Date.now()/1000) * 400;
+					camera.lookAt( new THREE.Vector3(0,0,0) );
+
+					renderer.render( scene, camera );
+				}
+		});
+	</script>
+</head>
+<body id="container">
+</body>
+</html>
